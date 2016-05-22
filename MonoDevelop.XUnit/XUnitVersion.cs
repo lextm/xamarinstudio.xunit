@@ -1,5 +1,5 @@
-﻿//
-// XUnitTestProvider.cs
+//
+// XUnitProjectTestSuite.cs
 //
 // Author:
 //       Sergey Khabibullin <sergey@khabibullin.com>
@@ -24,55 +24,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Linq;
 using MonoDevelop.UnitTesting;
-using MonoDevelop.Ide;
 using MonoDevelop.Projects;
+using MonoDevelop.Ide;
+using System.Collections.Generic;
+using System.IO;
+using MonoDevelop.Ide.TypeSystem;
+using ICSharpCode.NRefactory.TypeSystem;
 
 namespace MonoDevelop.XUnit
 {
-	/// <summary>
-	/// Provider is used to register xUnit.net framework at NUnitService.
-	/// </summary>
-	public class XUnitTestProvider: ITestProvider
-	{
-        public XUnitTestProvider ()
-        {
-            IdeApp.Workspace.ReferenceAddedToProject += OnReferenceChanged;
-            IdeApp.Workspace.ReferenceRemovedFromProject += OnReferenceChanged;
-        }
 
-		public UnitTest CreateUnitTest (WorkspaceObject entry)
-		{
-			UnitTest test = null;
-
-			if (entry is DotNetProject)
-				test = XUnitProjectTestSuite.CreateTest (entry);
-
-			UnitTestGroup group = test as UnitTestGroup;
-            if (group != null && !group.HasTests) {
-                test.Dispose ();
-                return null;
-            }
-
-			return test;
-		}
-
-		public Type[] GetOptionTypes ()
-		{
-			return null;
-		}
-
-        void OnReferenceChanged (object s, ProjectReferenceEventArgs args)
-        {
-            if (XUnitProjectTestSuite.IsXUnitReference (args.ProjectReference))
-                UnitTestService.ReloadTests ();
-        }
-
-        public void Dispose ()
-        {
-            IdeApp.Workspace.ReferenceAddedToProject -= OnReferenceChanged;
-            IdeApp.Workspace.ReferenceRemovedFromProject -= OnReferenceChanged;
-        }
-	}
+    public enum XUnitVersion
+    {
+        Unknown,
+        XUnit,
+        XUnit2
+    }
 }
-

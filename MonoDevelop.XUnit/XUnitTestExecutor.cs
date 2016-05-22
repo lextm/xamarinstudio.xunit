@@ -25,7 +25,7 @@
 // THE SOFTWARE.
 
 using System;
-using MonoDevelop.NUnit;
+using MonoDevelop.UnitTesting;
 using System.Collections.Generic;
 using System.Threading;
 using MonoDevelop.Core;
@@ -86,7 +86,7 @@ namespace MonoDevelop.XUnit
 				RemotingServices.Marshal (executionListener, null, typeof (IXUnitExecutionListener));
 
 				XUnitTestRunner runner = (XUnitTestRunner)Runtime.ProcessService.CreateExternalProcessObject (typeof(XUnitTestRunner),
-					context.ExecutionContext, rootSuite.SupportAssemblies);
+					true, rootSuite.SupportAssemblies, null);
 
 				try {
 					runner.Execute (rootSuite.AssemblyPath, testCases.Select (tc => tc.TestInfo).ToArray (), executionListener);
@@ -155,7 +155,7 @@ namespace MonoDevelop.XUnit
 
 		public bool IsCancelRequested {
 			get {
-				return context.Monitor.IsCancelRequested;
+				return context.Monitor.CancellationToken.IsCancellationRequested;
 			}
 		}
 

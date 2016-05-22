@@ -25,7 +25,7 @@
 // THE SOFTWARE.
 
 using System;
-using MonoDevelop.NUnit;
+using MonoDevelop.UnitTesting;
 using System.Collections.Generic;
 using System.Threading;
 using MonoDevelop.Core;

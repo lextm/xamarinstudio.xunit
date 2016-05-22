@@ -55,7 +55,7 @@ namespace MonoDevelop.XUnit
 		XUnitTestInfo BuildTestInfo (string assembly)
 		{
 			var infos = new List<TestCaseInfo> ();
-
+            // TODO: use TestDiscoveryVisitor to locate test cases.
 			if (assembly != null && File.Exists (assembly)) {
 				using (var controller = new XunitFrontController (assembly, null, false))
 				using (var discoveryVisitor = new TestDiscoveryVisitor ()) {
@@ -141,13 +141,42 @@ namespace MonoDevelop.XUnit
 				controller.Find(false, discoveryVisitor, TestFrameworkOptions.ForDiscovery ());
 				discoveryVisitor.Finished.WaitOne ();
 
-				var options = TestFrameworkOptions.ForExecution ();
-				options.SetDisableParallelization (true);
-				options.SetSynchronousMessageReporting (true);
-
+                var options = TestFrameworkOptions.ForExecution (LoadConfiguration(assembly));
 				controller.RunTests (discoveryVisitor.TestCases, executionVisitor, options);
 			}
 		}
+
+        static Stream GetConfigurationStreamForAssembly(string assemblyName)
+        {
+            // See if there's a directory with the assm name. this might be the case for appx
+            if (Directory.Exists(assemblyName))
+            {
+                if (File.Exists(Path.Combine(assemblyName, $"{assemblyName}.xunit.runner.json")))
+                    return File.OpenRead(Path.Combine(assemblyName, $"{assemblyName}.xunit.runner.json"));
+
+                if (File.Exists(Path.Combine(assemblyName, "xunit.runner.json")))
+                    return File.OpenRead(Path.Combine(assemblyName, "xunit.runner.json"));
+            }
+
+            // Fallback to working dir
+            if (File.Exists($"{assemblyName}.xunit.runner.json"))
+                return File.OpenRead($"{assemblyName}.xunit.runner.json");
+
+            if (File.Exists("xunit.runner.json"))
+                return File.OpenRead("xunit.runner.json");
+
+            return null;
+        }
+
+        static TestAssemblyConfiguration LoadConfiguration(string assemblyName)
+        {
+            #if PLATFORM_DOTNET
+            var stream = GetConfigurationStreamForAssembly(assemblyName);
+            return stream == null ? new TestAssemblyConfiguration() : ConfigReader.Load(stream);
+            #else
+            return ConfigReader.Load(assemblyName);
+            #endif
+        }
 
 		class TestCaseInfo
 		{

@@ -24,7 +24,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
-using MonoDevelop.NUnit;
+using MonoDevelop.UnitTesting;
 using System.Collections.Generic;
 using System.Threading;
 using MonoDevelop.Core;
@@ -32,6 +32,7 @@ using MonoDevelop.Ide;
 using MonoDevelop.Projects;
 using System.Linq;
 using System.IO;
+using System.Threading.Tasks;
 using MonoDevelop.Ide.TypeSystem;
 using MonoDevelop.Core.Execution;
 
@@ -83,10 +84,15 @@ namespace MonoDevelop.XUnit
 			}
 		}
 
-		public virtual SourceCodeLocation GetSourceCodeLocation (UnitTest unitTest)
-		{
-			return null;
-		}
+        internal SourceCodeLocation GetSourceCodeLocation (UnitTest test)
+        {
+            return GetSourceCodeLocation (test.FixtureTypeNamespace, test.FixtureTypeName, test.Name);
+        }
+
+        protected virtual SourceCodeLocation GetSourceCodeLocation (string fixtureTypeNamespace, string fixtureTypeName, string testName)
+        {
+            return null;
+        }
 
 		protected bool RefreshRequired {
 			get {
@@ -123,10 +129,9 @@ namespace MonoDevelop.XUnit
 			loader.AsyncLoadTestInfo (this, cache);
 		}
 
-		public override IAsyncOperation Refresh ()
+		public override Task Refresh (CancellationToken ct)
 		{
-			AsyncOperation oper = new AsyncOperation ();
-			System.Threading.ThreadPool.QueueUserWorkItem (delegate {
+			return Task.Run(delegate {
 				lock (locker) {
 					try {
 						while (Status == TestStatus.Loading) {
@@ -140,13 +145,10 @@ namespace MonoDevelop.XUnit
 								Monitor.Wait (locker);
 							}
 						}
-						oper.SetCompleted (true);
 					} catch {
-						oper.SetCompleted (false);
 					}
 				}
 			});
-			return oper;
 		}
 
 		public void OnTestSuiteLoaded (XUnitTestInfo testInfo)
@@ -156,7 +158,7 @@ namespace MonoDevelop.XUnit
 				Monitor.PulseAll (locker);
 			}
 
-			DispatchService.GuiDispatch (delegate {
+			Runtime.RunInMainThread (delegate {
 				AsyncCreateTests (testInfo);
 			});
 		}

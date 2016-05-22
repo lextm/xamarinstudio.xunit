@@ -25,13 +25,12 @@
 // THE SOFTWARE.
 using System;
 using System.Linq;
-using MonoDevelop.NUnit;
+using MonoDevelop.UnitTesting;
 using MonoDevelop.Projects;
 using MonoDevelop.Ide;
 using System.Collections.Generic;
 using System.IO;
 using MonoDevelop.Ide.TypeSystem;
-using ICSharpCode.NRefactory.TypeSystem;
 
 namespace MonoDevelop.XUnit
 {
@@ -74,7 +73,7 @@ namespace MonoDevelop.XUnit
 			}
 		}
 
-		public static UnitTest CreateTest (IWorkspaceObject entry)
+		public static UnitTest CreateTest (WorkspaceObject entry)
 		{
 			var project = entry as DotNetProject;
 			if (project != null) {
@@ -89,43 +88,30 @@ namespace MonoDevelop.XUnit
 			return null;
 		}
 
-		public override SourceCodeLocation GetSourceCodeLocation (UnitTest unitTest)
-		{
-			XUnitTestInfo info = null;
+        public static bool IsXUnitReference (ProjectReference p)
+        {
+            return GetXUnitVersion (p).HasValue;
+        }
 
-			if (unitTest is XUnitTestCase)
-				info = ((XUnitTestCase)unitTest).TestInfo;
-			if (unitTest is XUnitTestSuite)
-				info = ((XUnitTestSuite)unitTest).TestInfo;
+        public static XUnitVersion? GetXUnitVersion (ProjectReference p)
+        {
+            if (p.Reference == "xunit") // xUnit.Net 1.x
+                return XUnitVersion.XUnit;
+            if (p.Reference.IndexOf ("xunit.core", StringComparison.OrdinalIgnoreCase) != -1) // xUnit.Net 2.x
+                return XUnitVersion.XUnit2;
 
-			if (info == null || info.Type == null)
-				return null;
+            return null;
+        }
 
-			string namespaceName = "", className = "", methodName = info.Method;
-
-			// extract namespace and class
-			string[] nameParts = info.Type.Split ('.');
-			if (nameParts.Length == 1) {
-				className = nameParts [0];
-			} else {
-				namespaceName = String.Join (".", nameParts, 0, nameParts.Length - 1);
-				className = nameParts [nameParts.Length - 1];
-			}
-
-			var compilation = TypeSystemService.GetCompilation (project);
-			var type = compilation.MainAssembly.GetTypeDefinition (namespaceName, className);
-
-			if (type == null)
-				return null;
-
-			// try to find the method's location
-			var method = type.GetMethods ().FirstOrDefault (m => m.Name == methodName);
-			if (method != null)
-				return new SourceCodeLocation (method.Region.FileName, method.Region.BeginLine, method.Region.BeginColumn);
-
-			// or at least return the location of the type
-			return new SourceCodeLocation (type.Region.FileName, type.Region.BeginLine, type.Region.BeginColumn);
-		}
+        protected override SourceCodeLocation GetSourceCodeLocation (string fixtureTypeNamespace, string fixtureTypeName, string testName)
+        {
+            if (string.IsNullOrEmpty (fixtureTypeName) || string.IsNullOrEmpty (fixtureTypeName))
+                return null;
+            var task = XUnitSourceCodeLocationFinder.TryGetSourceCodeLocationAsync (project, fixtureTypeNamespace, fixtureTypeName, testName);
+            if (!task.Wait (2000))
+                return null;
+            return task.Result;
+        }
 
 		void OnProjectRenamed (object sender, SolutionItemRenamedEventArgs e)
 		{
@@ -158,5 +144,7 @@ namespace MonoDevelop.XUnit
 			return resultsDir;
 		}
 	}
+
+    
 }
 

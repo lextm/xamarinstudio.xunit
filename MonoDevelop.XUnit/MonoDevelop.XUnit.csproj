@@ -42,6 +42,8 @@
     <Compile Include="XUnitTestProvider.cs" />
     <Compile Include="XUnitTestRunner.cs" />
     <Compile Include="XUnitTestSuite.cs" />
+    <Compile Include="XUnitVersion.cs" />
+    <Compile Include="XUnitSourceCodeLocationFinder.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Manifest.addin.xml" />
@@ -58,14 +60,14 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <AddinReference Include="MonoDevelop.NUnit" />
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="xunit.abstractions">
       <HintPath>..\packages\xunit.abstractions.2.0.0\lib\portable-net45+win+wpa81+wp80+monotouch+monoandroid+Xamarin.iOS\xunit.abstractions.dll</HintPath>
     </Reference>
     <Reference Include="xunit.runner.utility.desktop">
       <HintPath>..\packages\xunit.runner.utility.2.1.0-beta1-build2945\lib\net35\xunit.runner.utility.desktop.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <AddinReference Include="MonoDevelop.UnitTesting" />
   </ItemGroup>
 </Project>
