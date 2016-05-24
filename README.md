@@ -1,5 +1,3 @@
-xUnit.NET testing framework support
-===================================
-Integrates xUnit.NET into the MonoDevelop / Xamarin Studio IDE.
+**Changes in this fork are now merged back to origin.**
 
-Copyright (c) Sergey Khabibullin
+**Please visit https://github.com/xunit/xamarinstudio.xunit for latest information.**
